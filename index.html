@@ -665,6 +665,58 @@ var calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 var confirmCb=null,currentTurnoDate=null,currentPagoCol=null;
 
 // INIT
+function restoreSession(){
+  try{
+    var sess=localStorage.getItem("telp_sess");
+    if(!sess){gel("login").style.display="flex";return false;}
+    var sd=JSON.parse(sess);
+    // Try to find user in current localStorage data
+    var users=ld(K.u,DU);
+    var found=null;
+    for(var i=0;i<users.length;i++){if(users[i].id===sd.id&&users[i].ok!==false){found=users[i];break;}}
+    // If not found in localStorage but we have saved user data, use it directly
+    if(!found&&sd.user){found=sd.user;}
+    if(!found){localStorage.removeItem("telp_sess");gel("login").style.display="flex";return false;}
+    CU=found;
+    gel("login").style.display="none";
+    var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
+    gel("ubadge").textContent=CU.n+" / "+CU.rol+(CU.ap?" (AP)":"");
+    buildNav();initPOS();chkLow();chkVenc();
+    loadInact();secAttach();secReset();initPosSearch();
+    startRealtimeSync();
+    return true;
+  }catch(e){gel("login").style.display="flex";return false;}
+}
+function startRealtimeSync(){
+  if(!window.fbDB||!CU)return;
+  var keys=Object.values(K);
+  keys.forEach(function(k){
+    var dk=k.replace(/[^a-zA-Z0-9]/g,"_");
+    window.fbDB.collection("telp_data").doc(dk).onSnapshot(function(doc){
+      if(doc.exists&&doc.data()&&doc.data().val){
+        try{
+          var nv=doc.data().val;
+          var ov=localStorage.getItem(k);
+          if(nv!==ov){localStorage.setItem(k,nv);refreshCurrentPage();}
+        }catch(e){}
+      }
+    },function(){});
+  });
+}
+function refreshCurrentPage(){
+  var pages=["pos","inv","hist","dash","nom","admin","prods"];
+  for(var i=0;i<pages.length;i++){
+    var pg=gel("pg-"+pages[i]);
+    if(pg&&pg.classList.contains("on")){
+      if(pages[i]==="pos")rnProds();
+      else if(pages[i]==="inv")rnInv();
+      else if(pages[i]==="hist")rnHist();
+      else if(pages[i]==="dash")rnDash();
+      else if(pages[i]==="nom")rnNomR();
+      break;
+    }
+  }
+}
 function initData(){
   if(!localStorage.getItem(VER)){
     var ks=Object.values(K);
@@ -734,7 +786,8 @@ function doLogin2(){
   sv(K.ss,ss);
   gel("login").style.display="none";
   var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
-  gel("ubadge").textContent=CU.n+" / "+CU.rol;
+  gel("ubadge").textContent=CU.n+" / "+CU.rol+(CU.ap?" (AP)":"");
+  try{localStorage.setItem("telp_sess",JSON.stringify({id:CU.id,user:CU}));}catch(e){}
   addLog("ACC","Ingreso al sistema","i");
   buildNav();initPOS();chkLow();chkVenc();
   loadInact();
@@ -748,6 +801,7 @@ function doLogout(){
     for(var i=ss.length-1;i>=0;i--){if(ss[i].uid===CU.id&&!ss[i].ex){ss[i].ex=new Date().toISOString();break;}}
     sv(K.ss,ss);addLog("ACC","Salio del sistema","i");
   }
+  try{localStorage.removeItem("telp_sess");}catch(e){}
   CU=null;order=[];pendingFac=false;lastPed=null;
   // Reset all pages to default state to prevent session bleed
   var pgs=document.querySelectorAll(".page");
@@ -2520,6 +2574,17 @@ function wireup(){
 
 initData();
 wireup();
+// Hide login initially while we check session
+gel("login").style.display="none";
+if(window.fbDB){
+  // Sync from Firebase then restore session
+  syncFromFirebase(function(){
+    restoreSession();
+  });
+} else {
+  // No Firebase - restore from localStorage directly
+  restoreSession();
+}
 
 
 </script>
