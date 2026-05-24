@@ -2589,14 +2589,20 @@ initData();
 wireup();
 // Hide login initially while we check session
 gel("login").style.display="none";
-if(window.fbDB){
-  // Sync from Firebase then restore session
-  syncFromFirebase(function(){
-    restoreSession();
-  });
+// Try to restore session immediately from localStorage/sessionStorage
+// This prevents flash of login screen on reload
+var quickRestored=restoreSession();
+if(!quickRestored){
+  // No saved session - show login
+  gel("login").style.display="flex";
 } else {
-  // No Firebase - restore from localStorage directly
-  restoreSession();
+  // Session restored! Now sync Firebase data in background
+  if(window.fbDB){
+    syncFromFirebase(function(){
+      // Refresh current page with latest Firebase data
+      refreshCurrentPage();
+    });
+  }
 }
 
 
