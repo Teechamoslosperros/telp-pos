@@ -671,13 +671,16 @@ function restoreSession(){
     var sess=sessionStorage.getItem("telp_sess")||localStorage.getItem("telp_sess");
     if(!sess){gel("login").style.display="flex";return false;}
     var sd=JSON.parse(sess);
-    // Try to find user in current localStorage data
-    var users=ld(K.u,DU);
-    var found=null;
-    for(var i=0;i<users.length;i++){if(users[i].id===sd.id&&users[i].ok!==false){found=users[i];break;}}
-    // If not found in localStorage but we have saved user data, use it directly
-    if(!found&&sd.user){found=sd.user;}
-    if(!found){localStorage.removeItem("telp_sess");gel("login").style.display="flex";return false;}
+    // Use the saved user directly - most reliable approach
+    var found=sd.user||null;
+    // Also try to get updated user from saved users list
+    try{
+      var savedUsers=JSON.parse(localStorage.getItem("telp_sess_users")||"[]");
+      for(var i=0;i<savedUsers.length;i++){
+        if(savedUsers[i].id===sd.id&&savedUsers[i].ok!==false){found=savedUsers[i];break;}
+      }
+    }catch(e){}
+    if(!found){localStorage.removeItem("telp_sess");sessionStorage.removeItem("telp_sess");gel("login").style.display="flex";return false;}
     CU=found;
     gel("login").style.display="none";
     var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
@@ -704,17 +707,17 @@ function startRealtimeSync(){
             syncCount++;
             refreshCurrentPage();
             var st=gel("sync-st");
-            if(st)st.textContent="☁️ "+new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
+            if(st)st.textContent="[SYNC] "+new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
           }
         }catch(e){}
       }
     },function(err){
       var st=gel("sync-st");
-      if(st){st.textContent="⚠️ Sin sync";st.style.color="var(--err)";}
+      if(st){st.textContent="[ERROR] Sin sync";st.style.color="var(--err)";}
     });
   });
   var st=gel("sync-st");
-  if(st){st.textContent="☁️ En vivo";st.style.color="var(--acc3)";}
+  if(st){st.textContent="[VIVO]";st.style.color="var(--acc3)";}
 }
 function refreshCurrentPage(){
   var pages=["pos","inv","hist","dash","nom","admin","prods"];
@@ -800,7 +803,13 @@ function doLogin2(){
   gel("login").style.display="none";
   var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
   gel("ubadge").textContent=CU.n+" / "+CU.rol+(CU.ap?" (AP)":"");
-  try{var sd=JSON.stringify({id:CU.id,user:CU});localStorage.setItem("telp_sess",sd);sessionStorage.setItem("telp_sess",sd);}catch(e){}
+  try{
+  var sd=JSON.stringify({id:CU.id,user:CU,ts:Date.now()});
+  localStorage.setItem("telp_sess",sd);
+  sessionStorage.setItem("telp_sess",sd);
+  // Also save a copy of users list for offline restore
+  localStorage.setItem("telp_sess_users",localStorage.getItem(K.u)||"[]");
+}catch(e){}
   addLog("ACC","Ingreso al sistema","i");
   buildNav();initPOS();chkLow();chkVenc();
   loadInact();
@@ -814,7 +823,7 @@ function doLogout(){
     for(var i=ss.length-1;i>=0;i--){if(ss[i].uid===CU.id&&!ss[i].ex){ss[i].ex=new Date().toISOString();break;}}
     sv(K.ss,ss);addLog("ACC","Salio del sistema","i");
   }
-  try{localStorage.removeItem("telp_sess");sessionStorage.removeItem("telp_sess");}catch(e){}
+  try{localStorage.removeItem("telp_sess");sessionStorage.removeItem("telp_sess");localStorage.removeItem("telp_sess_users");}catch(e){}
   CU=null;order=[];pendingFac=false;lastPed=null;
   // Reset all pages to default state to prevent session bleed
   var pgs=document.querySelectorAll(".page");
@@ -2587,22 +2596,23 @@ function wireup(){
 
 initData();
 wireup();
-// Hide login initially while we check session
+// Hide login initially
 gel("login").style.display="none";
-// Try to restore session immediately from localStorage/sessionStorage
-// This prevents flash of login screen on reload
+// Restore session immediately from saved data
 var quickRestored=restoreSession();
 if(!quickRestored){
-  // No saved session - show login
   gel("login").style.display="flex";
 } else {
-  // Session restored! Now sync Firebase data in background
-  if(window.fbDB){
-    syncFromFirebase(function(){
-      // Refresh current page with latest Firebase data
-      refreshCurrentPage();
-    });
-  }
+  // Sync Firebase in background after session restored
+  setTimeout(function(){
+    if(window.fbDB){
+      syncFromFirebase(function(){
+        refreshCurrentPage();
+        // Update saved users list with latest data
+        try{localStorage.setItem("telp_sess_users",localStorage.getItem(K.u)||"[]");}catch(e){}
+      });
+    }
+  },500);
 }
 
 
