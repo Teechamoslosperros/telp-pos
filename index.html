@@ -628,97 +628,11 @@ var DR={
 };
 
 // UTILS
+function gel(id){return document.getElementById(id);}
 function ld(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
 function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}if(window.fbDB){try{var dk=k.replace(/[^a-zA-Z0-9]/g,"_");window.fbDB.collection("telp_data").doc(dk).set({val:JSON.stringify(v),ts:Date.now()},{merge:true}).catch(function(){});}catch(ex){}}}
-function syncFromFirebase(cb){if(!window.fbDB){if(cb)cb();return;}var keys=Object.values(K);var pending=keys.length;var synced=0;keys.forEach(function(k){var dk=k.replace(/[^a-zA-Z0-9]/g,"_");window.fbDB.collection("telp_data").doc(dk).get().then(function(doc){if(doc.exists&&doc.data()&&doc.data().val){try{localStorage.setItem(k,doc.data().val);synced++;}catch(e){}}pending--;if(pending<=0){if(synced>0)toast("Sincronizado con la nube","s");if(cb)cb();}}).catch(function(){pending--;if(pending<=0){if(cb)cb();}});});}
-function gel(id){return document.getElementById(id);}
-function fmt(n){return "$"+Number(Math.round(n)).toLocaleString("es-CO");}
-function openOv(id){gel(id).classList.add("on");}
-function closeOv(id){gel(id).classList.remove("on");}
-function toast(msg,t){
-  var c=gel("tc"),el=document.createElement("div");
-  el.className="toast badge "+(t==="e"?"blow":t==="w"?"bwarn":"bok");
-  el.style.cssText="padding:11px 18px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.4)";
-  el.textContent=msg;c.appendChild(el);
-  setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},3800);
-}
-function addLog(tp,msg,lv){
-  var logs=ld(K.log,[]);
-  logs.unshift({t:new Date().toISOString(),tp:tp,msg:msg,lv:lv||"i",u:CU?CU.n:"?"});
-  if(logs.length>600)logs.length=600;
-  sv(K.log,logs);
-}
-function dlCSV(rows,fn){
-  var b=new Blob([rows.join("\n")],{type:"text/csv;charset=utf-8;"});
-  var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=fn;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-}
-function dStr(d){
-  var p=d?d.split("/"):[];
-  return p.length===3?(p[2].length<4?"20"+p[2]:p[2])+"-"+(p[1].length<2?"0":"")+p[1]+"-"+(p[0].length<2?"0":"")+p[0]:d;
-}
 
-// STATE
-var CU=null,order=[],acat="TODOS",motCb=null,lastMot="",lf="all";
-var pendingFac=false,lastPed=null;
-var calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
-var confirmCb=null,currentTurnoDate=null,currentPagoCol=null;
 
-// INIT
-function restoreSession(){
-  try{
-    // sessionStorage survives reload, localStorage survives tab close
-    var sess=sessionStorage.getItem("telp_sess")||localStorage.getItem("telp_sess");
-    if(!sess){gel("login").style.display="flex";return false;}
-    var sd=JSON.parse(sess);
-    // Use the saved user directly - most reliable approach
-    var found=sd.user||null;
-    // Also try to get updated user from saved users list
-    try{
-      var savedUsers=JSON.parse(localStorage.getItem("telp_sess_users")||"[]");
-      for(var i=0;i<savedUsers.length;i++){
-        if(savedUsers[i].id===sd.id&&savedUsers[i].ok!==false){found=savedUsers[i];break;}
-      }
-    }catch(e){}
-    if(!found){localStorage.removeItem("telp_sess");sessionStorage.removeItem("telp_sess");gel("login").style.display="flex";return false;}
-    CU=found;
-    gel("login").style.display="none";
-    var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
-    gel("ubadge").textContent=CU.n+" / "+CU.rol+(CU.ap?" (AP)":"");
-    buildNav();initPOS();chkLow();chkVenc();
-    loadInact();secAttach();secReset();initPosSearch();
-    startRealtimeSync();
-    return true;
-  }catch(e){gel("login").style.display="flex";return false;}
-}
-function startRealtimeSync(){
-  if(!window.fbDB||!CU)return;
-  var keys=Object.values(K);
-  var syncCount=0;
-  keys.forEach(function(k){
-    var dk=k.replace(/[^a-zA-Z0-9]/g,"_");
-    window.fbDB.collection("telp_data").doc(dk).onSnapshot(function(doc){
-      if(doc.exists&&doc.data()&&doc.data().val){
-        try{
-          var nv=doc.data().val;
-          var ov=localStorage.getItem(k);
-          if(nv!==ov){
-            localStorage.setItem(k,nv);
-            syncCount++;
-            refreshCurrentPage();
-            var st=gel("sync-st");
-            if(st)st.textContent="[SYNC] "+new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
-          }
-        }catch(e){}
-      }
-    },function(err){
-      var st=gel("sync-st");
-      if(st){st.textContent="[ERROR] Sin sync";st.style.color="var(--err)";}
-    });
-  });
-  var st=gel("sync-st");
-  if(st){st.textContent="[VIVO]";st.style.color="var(--acc3)";}
-}
 function refreshCurrentPage(){
   var pages=["pos","inv","hist","dash","nom","admin","prods"];
   for(var i=0;i<pages.length;i++){
@@ -733,6 +647,7 @@ function refreshCurrentPage(){
     }
   }
 }
+
 function initData(){
   if(!localStorage.getItem(VER)){
     var ks=Object.values(K);
@@ -824,6 +739,7 @@ function doLogout(){
     sv(K.ss,ss);addLog("ACC","Salio del sistema","i");
   }
   try{localStorage.removeItem("telp_sess");sessionStorage.removeItem("telp_sess");localStorage.removeItem("telp_sess_users");}catch(e){}
+  if(window._syncInterval){clearInterval(window._syncInterval);window._syncInterval=null;}
   CU=null;order=[];pendingFac=false;lastPed=null;
   // Reset all pages to default state to prevent session bleed
   var pgs=document.querySelectorAll(".page");
@@ -2594,28 +2510,65 @@ function wireup(){
   
 }
 
+function syncFromFirebase(cb){
+  if(!window.fbDB){if(cb)cb();return;}
+  var keys=Object.values(K);var pending=keys.length;
+  keys.forEach(function(k){
+    var dk=k.replace(/[^a-zA-Z0-9]/g,"_");
+    window.fbDB.collection("telp_data").doc(dk).get()
+      .then(function(doc){
+        if(doc.exists&&doc.data()&&doc.data().val){
+          var nv=doc.data().val;
+          if(nv!==localStorage.getItem(k))localStorage.setItem(k,nv);
+        }
+        pending--;if(pending<=0){if(cb)cb();}
+      }).catch(function(){pending--;if(pending<=0){if(cb)cb();}});
+  });
+}
+function startRealtimeSync(){
+  if(!window.fbDB||!CU)return;
+  if(window._syncInterval)clearInterval(window._syncInterval);
+  window._syncInterval=setInterval(function(){
+    if(!CU){clearInterval(window._syncInterval);return;}
+    Object.values(K).forEach(function(k){
+      var dk=k.replace(/[^a-zA-Z0-9]/g,"_");
+      window.fbDB.collection("telp_data").doc(dk).get()
+        .then(function(doc){
+          if(doc.exists&&doc.data()&&doc.data().val){
+            var nv=doc.data().val;
+            if(nv!==localStorage.getItem(k)){
+              localStorage.setItem(k,nv);
+              refreshCurrentPage();
+            }
+          }
+        }).catch(function(){});
+    });
+  },5000);
+  var st=gel("sync-st");if(st){st.textContent="[EN VIVO]";st.style.color="var(--acc3)";}
+}
+function restoreSession(){
+  try{
+    var sess=sessionStorage.getItem("telp_sess")||localStorage.getItem("telp_sess");
+    if(!sess){gel("login").style.display="flex";return false;}
+    var sd=JSON.parse(sess);
+    var found=sd.user||null;
+    if(!found){gel("login").style.display="flex";return false;}
+    CU=found;
+    gel("login").style.display="none";
+    var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
+    gel("ubadge").textContent=CU.n+" / "+CU.rol+(CU.ap?" (AP)":"");
+    buildNav();initPOS();chkLow();chkVenc();
+    loadInact();secAttach();secReset();initPosSearch();
+    if(window.fbDB){syncFromFirebase(function(){refreshCurrentPage();startRealtimeSync();});}
+    return true;
+  }catch(e){gel("login").style.display="flex";return false;}
+}
 initData();
 wireup();
 // Hide login initially
 gel("login").style.display="none";
-// Restore session immediately from saved data
-var quickRestored=restoreSession();
-if(!quickRestored){
-  gel("login").style.display="flex";
-} else {
-  // Sync Firebase in background after session restored
-  setTimeout(function(){
-    if(window.fbDB){
-      syncFromFirebase(function(){
-        refreshCurrentPage();
-        // Update saved users list with latest data
-        try{localStorage.setItem("telp_sess_users",localStorage.getItem(K.u)||"[]");}catch(e){}
-      });
-    }
-  },500);
-}
-
-
+var restored=restoreSession();
+if(!restored){gel("login").style.display="flex";}
 </script>
 </body>
 </html>
