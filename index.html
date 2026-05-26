@@ -208,20 +208,36 @@ table{font-size:11px}th{padding:5px 6px;font-size:10px}td{padding:6px}
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="TELP POS">
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script>
-  try{
-    firebase.initializeApp({
-      apiKey:"AIzaSyAZkDxMIjbSN5M0CYfrtpcPQ4v3DgxJfI4",
-      authDomain:"telp-pos.firebaseapp.com",
-      projectId:"telp-pos",
-      storageBucket:"telp-pos.firebasestorage.app",
-      messagingSenderId:"52187185001",
-      appId:"1:52187185001:web:7720e97cd5f53bd06687f8"
-    });
-    window.fbDB=firebase.firestore();
-  }catch(e){window.fbDB=null;}
+  window.fbDB=null;
+  window._fbConfig={
+    apiKey:"AIzaSyAZkDxMIjbSN5M0CYfrtpcPQ4v3DgxJfI4",
+    authDomain:"telp-pos.firebaseapp.com",
+    projectId:"telp-pos",
+    storageBucket:"telp-pos.firebasestorage.app",
+    messagingSenderId:"52187185001",
+    appId:"1:52187185001:web:7720e97cd5f53bd06687f8"
+  };
+  function loadFirebase(cb){
+    var s1=document.createElement("script");
+    s1.src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js";
+    s1.onload=function(){
+      var s2=document.createElement("script");
+      s2.src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js";
+      s2.onload=function(){
+        try{
+          firebase.initializeApp(window._fbConfig);
+          window.fbDB=firebase.firestore();
+          console.log("Firebase OK");
+        }catch(e){window.fbDB=null;console.warn("Firebase error:",e);}
+        if(cb)cb();
+      };
+      s2.onerror=function(){window.fbDB=null;if(cb)cb();};
+      document.head.appendChild(s2);
+    };
+    s1.onerror=function(){window.fbDB=null;if(cb)cb();};
+    document.head.appendChild(s1);
+  }
   </script>
 </head>
 <body>
@@ -745,6 +761,15 @@ function restoreSession(){
     if(!sess){gel("login").style.display="flex";return false;}
     var sd=JSON.parse(sess);
     var found=sd.user||null;
+    // Also verify against current users list if available
+    try{
+      var cu=ld(K.u,null);
+      if(cu){
+        for(var i=0;i<cu.length;i++){
+          if(cu[i].id===sd.id&&cu[i].ok!==false){found=cu[i];break;}
+        }
+      }
+    }catch(e){}
     if(!found){gel("login").style.display="flex";return false;}
     CU=found;
     gel("login").style.display="none";
@@ -753,8 +778,19 @@ function restoreSession(){
     buildNav();initPOS();chkLow();chkVenc();
     loadInact();secAttach();secReset();initPosSearch();
     if(window.fbDB){
-      if(!localStorage.getItem("telp_pushed_v8"))pushToFirebase();
-      syncFromFirebase(function(){refreshCurrentPage();startPollingSync();});
+      // Delay to ensure Firebase is ready
+      setTimeout(function(){
+        if(!localStorage.getItem("telp_pushed_v8"))pushToFirebase();
+        syncFromFirebase(function(){refreshCurrentPage();startPollingSync();});
+      },1000);
+    } else {
+      // Retry after Firebase loads
+      setTimeout(function(){
+        if(window.fbDB){
+          if(!localStorage.getItem("telp_pushed_v8"))pushToFirebase();
+          syncFromFirebase(function(){refreshCurrentPage();startPollingSync();});
+        }
+      },3000);
     }
     return true;
   }catch(e){gel("login").style.display="flex";return false;}
@@ -1231,7 +1267,7 @@ function rnInv(){
   // isel removed - form uses text input now
   var cntInv=gel("inv-search-count");
   if(cntInv){
-    if(searchTerms.inv)cntInv.textContent=invShown+" de "+ins.length+" insumos";
+    if(searchTerms.inv)cntInv.textContent=shown+" de "+ins.length+" insumos";
     else cntInv.textContent="";
   }
   if(!tb.children.length){var etr=document.createElement("tr");etr.innerHTML="<td colspan='7' style='text-align:center;color:var(--tx3);padding:20px'>"+(searchTerms.inv?"Sin resultados para: "+searchTerms.inv:"Sin insumos")+"</td>";tb.appendChild(etr);}
@@ -2648,8 +2684,17 @@ initData();
 wireup();
 // Restore session or show login
 gel("login").style.display="none";
-if(!restoreSession()){
-  gel("login").style.display="flex";
+// Load Firebase first then restore session
+if(typeof loadFirebase === "function"){
+  loadFirebase(function(){
+    if(!restoreSession()){
+      gel("login").style.display="flex";
+    }
+  });
+} else {
+  if(!restoreSession()){
+    gel("login").style.display="flex";
+  }
 }
 
 
