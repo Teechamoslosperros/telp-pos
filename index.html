@@ -180,9 +180,30 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .search-count{font-size:11px;color:var(--tx3);margin-bottom:8px;margin-top:-4px}
 .highlight{background:rgba(255,107,26,.3);border-radius:2px;color:var(--acc);font-weight:700}
 
-@media(max-width:768px){.topbar{height:auto;flex-wrap:wrap;padding:8px 10px;gap:6px}.topbar img{height:32px}.tnav{order:3;width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}.nb{font-size:11px;padding:5px 10px;white-space:nowrap}.ubadge{font-size:10px;padding:3px 8px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pos-grid{grid-template-columns:1fr;height:auto;gap:10px}.pleft{height:48vh;min-height:260px}.pgrid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}.pcard{padding:8px 4px}.pemo{font-size:22px}.pnom{font-size:10px}.ppr{font-size:11px}.opanel{min-height:170px}.oit{max-height:170px}.oname{font-size:11px}.qb{width:26px;height:26px;font-size:16px}.oftr{padding:8px 10px;gap:6px}.or.tot{font-size:13px}.bcob{font-size:15px;padding:10px}.irow{gap:6px}.inp{padding:6px 8px;font-size:12px}.card{padding:12px}.g2{grid-template-columns:1fr}.g14{grid-template-columns:1fr}.frow{flex-direction:column;gap:8px}.kpis{grid-template-columns:repeat(2,1fr);gap:8px}.kcard{padding:12px}.kval{font-size:20px}.modal{width:95vw}.modal.sm{width:95vw}.mftr{flex-direction:column}.page{padding:10px}.stabs{gap:2px}.stab{font-size:11px;padding:5px 10px}.ctabs{flex-wrap:nowrap;overflow-x:auto}.ctab{white-space:nowrap}table{font-size:11px}th{padding:5px 6px;font-size:10px}td{padding:6px}.col-label{padding:5px 10px;font-size:12px}.cal-day{min-height:50px;padding:4px}.hcard-h{padding:10px 12px}}
-</style>
-
+@media(max-width:768px){
+.topbar{height:auto;flex-wrap:wrap;padding:8px 10px;gap:6px}
+.topbar img{height:32px}
+.tnav{order:3;width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+.nb{font-size:11px;padding:5px 10px;white-space:nowrap}
+.ubadge{font-size:10px;padding:3px 8px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pos-grid{grid-template-columns:1fr;height:auto;gap:10px}
+.pleft{height:48vh;min-height:260px}
+.pgrid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}
+.pcard{padding:8px 4px}.pemo{font-size:22px}.pnom{font-size:10px}.ppr{font-size:11px}
+.opanel{min-height:170px}.oit{max-height:170px}.oname{font-size:11px}
+.qb{width:26px;height:26px;font-size:16px}
+.oftr{padding:8px 10px;gap:6px}.or.tot{font-size:13px}.bcob{font-size:15px;padding:10px}
+.irow{gap:6px}.inp{padding:6px 8px;font-size:12px}
+.card{padding:12px}.g2{grid-template-columns:1fr}.g14{grid-template-columns:1fr}
+.frow{flex-direction:column;gap:8px}
+.kpis{grid-template-columns:repeat(2,1fr);gap:8px}.kcard{padding:12px}.kval{font-size:20px}
+.modal{width:95vw}.modal.sm{width:95vw}.mftr{flex-direction:column}
+.page{padding:10px}.stabs{gap:2px}.stab{font-size:11px;padding:5px 10px}
+.ctabs{flex-wrap:nowrap;overflow-x:auto}.ctab{white-space:nowrap}
+table{font-size:11px}th{padding:5px 6px;font-size:10px}td{padding:6px}
+.col-label{padding:5px 10px;font-size:12px}.cal-day{min-height:50px;padding:4px}
+.hcard-h{padding:10px 12px}
+}</style>
   <meta name="theme-color" content="#ff6b1a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -190,7 +211,17 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script>
-  try{firebase.initializeApp({apiKey:"AIzaSyAZkDxMIjbSN5M0CYfrtpcPQ4v3DgxJfI4",authDomain:"telp-pos.firebaseapp.com",projectId:"telp-pos",storageBucket:"telp-pos.firebasestorage.app",messagingSenderId:"52187185001",appId:"1:52187185001:web:7720e97cd5f53bd06687f8"});window.fbDB=firebase.firestore();}catch(e){window.fbDB=null;}
+  try{
+    firebase.initializeApp({
+      apiKey:"AIzaSyAZkDxMIjbSN5M0CYfrtpcPQ4v3DgxJfI4",
+      authDomain:"telp-pos.firebaseapp.com",
+      projectId:"telp-pos",
+      storageBucket:"telp-pos.firebasestorage.app",
+      messagingSenderId:"52187185001",
+      appId:"1:52187185001:web:7720e97cd5f53bd06687f8"
+    });
+    window.fbDB=firebase.firestore();
+  }catch(e){window.fbDB=null;}
   </script>
 </head>
 <body>
@@ -565,6 +596,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 <div id="tc" class="tc"></div>
 <div class="sec-overlay" id="sec-lock"><div class="sec-card"><div class="sec-title">&#128274; Sesion Bloqueada</div><div class="sec-msg">La sesion se bloqueo por inactividad.<br>Ingresa tu contrasena para continuar.</div><input class="sec-inp" type="password" id="sec-pw" placeholder="Contrasena..."><div style="color:#ef4444;font-size:12px;margin-bottom:10px;display:none" id="sec-err">Contrasena incorrecta</div><button class="sec-btn" id="sec-unlock-btn">DESBLOQUEAR</button><div style="margin-top:14px"><button style="background:none;border:none;color:#555;font-size:12px;cursor:pointer;font-family:inherit" id="sec-logout-btn">Cerrar sesion</button></div></div></div>
 <script>
+
 var PICKER=["\uD83C\uDF2D","\uD83C\uDF54","\uD83C\uDF55","\uD83C\uDF57","\uD83E\uDD69","\uD83E\uDD53","\uD83E\uDDC0","\uD83C\uDF2E","\uD83C\uDF4C","\uD83C\uDF70","\u2615","\uD83C\uDF75","\uD83E\uDD5B","\uD83C\uDF7A","\uD83C\uDF78","\uD83C\uDF79","\uD83E\uDD64","\uD83C\uDF6B","\uD83C\uDF66","\uD83C\uDF69","\uD83C\uDF6A","\uD83C\uDF3D","\uD83C\uDF36","\uD83C\uDF53","\uD83C\uDF47","\uD83C\uDF7D","\uD83C\uDF73","\uD83C\uDF5F","\uD83C\uDF77","\uD83E\uDD43","\uD83C\uDF6F","\uD83C\uDF6C","\uD83C\uDF82","\uD83C\uDF7F","\uD83E\uDDC2","\uD83E\uDD5D","\uD83E\uDD51","\uD83E\uDD55","\uD83C\uDF46","\uD83E\uDD50"];
 
 var DP=[
@@ -628,26 +660,139 @@ var DR={
 };
 
 // UTILS
-function gel(id){return document.getElementById(id);}
 function ld(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
-function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}if(window.fbDB){try{var dk=k.replace(/[^a-zA-Z0-9]/g,"_");window.fbDB.collection("telp_data").doc(dk).set({val:JSON.stringify(v),ts:Date.now()},{merge:true}).catch(function(){});}catch(ex){}}}
-
-
+function sv(k,v){
+  try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}
+  if(window.fbDB){
+    try{
+      var dk=k.replace(/[^a-zA-Z0-9]/g,"_");
+      window.fbDB.collection("telp_data").doc(dk).set(
+        {val:JSON.stringify(v),ts:Date.now(),ver:"v8"},{merge:true}
+      ).catch(function(){});
+    }catch(ex){}
+  }
+}
+function pushToFirebase(){
+  if(!window.fbDB)return;
+  Object.values(K).forEach(function(k){
+    var localVal=localStorage.getItem(k);
+    if(localVal){
+      var dk=k.replace(/[^a-zA-Z0-9]/g,"_");
+      window.fbDB.collection("telp_data").doc(dk).set(
+        {val:localVal,ts:Date.now(),ver:"v8"},{merge:true}
+      ).catch(function(){});
+    }
+  });
+  localStorage.setItem("telp_pushed_v8","1");
+}
+function syncFromFirebase(cb){
+  if(!window.fbDB){if(cb)cb();return;}
+  var keys=Object.values(K);
+  var pending=keys.length;
+  keys.forEach(function(k){
+    var dk=k.replace(/[^a-zA-Z0-9]/g,"_");
+    window.fbDB.collection("telp_data").doc(dk).get()
+      .then(function(doc){
+        if(doc.exists&&doc.data()&&doc.data().val&&doc.data().ver==="v8"){
+          var nv=doc.data().val;
+          if(nv!==localStorage.getItem(k))localStorage.setItem(k,nv);
+        }
+        pending--;
+        if(pending<=0){if(cb)cb();}
+      }).catch(function(){
+        pending--;
+        if(pending<=0){if(cb)cb();}
+      });
+  });
+}
+function startPollingSync(){
+  if(!window.fbDB||!CU)return;
+  if(window._syncInt)clearInterval(window._syncInt);
+  window._syncInt=setInterval(function(){
+    if(!CU){clearInterval(window._syncInt);return;}
+    Object.values(K).forEach(function(k){
+      var dk=k.replace(/[^a-zA-Z0-9]/g,"_");
+      window.fbDB.collection("telp_data").doc(dk).get()
+        .then(function(doc){
+          if(doc.exists&&doc.data()&&doc.data().val&&doc.data().ver==="v8"){
+            var nv=doc.data().val;
+            if(nv!==localStorage.getItem(k)){
+              localStorage.setItem(k,nv);
+              refreshCurrentPage();
+            }
+          }
+        }).catch(function(){});
+    });
+  },6000);
+}
 function refreshCurrentPage(){
-  var pages=["pos","inv","hist","dash","nom","admin","prods"];
-  for(var i=0;i<pages.length;i++){
-    var pg=gel("pg-"+pages[i]);
+  var pgs=["pos","inv","hist","dash","nom","admin","prods"];
+  for(var i=0;i<pgs.length;i++){
+    var pg=document.getElementById("pg-"+pgs[i]);
     if(pg&&pg.classList.contains("on")){
-      if(pages[i]==="pos")rnProds();
-      else if(pages[i]==="inv")rnInv();
-      else if(pages[i]==="hist")rnHist();
-      else if(pages[i]==="dash")rnDash();
-      else if(pages[i]==="nom")rnNomR();
+      if(pgs[i]==="pos")rnProds();
+      else if(pgs[i]==="inv")rnInv();
+      else if(pgs[i]==="hist")rnHist();
+      else if(pgs[i]==="dash")rnDash();
+      else if(pgs[i]==="nom")rnNomR();
       break;
     }
   }
 }
+function restoreSession(){
+  try{
+    var sess=sessionStorage.getItem("telp_sess")||localStorage.getItem("telp_sess");
+    if(!sess){gel("login").style.display="flex";return false;}
+    var sd=JSON.parse(sess);
+    var found=sd.user||null;
+    if(!found){gel("login").style.display="flex";return false;}
+    CU=found;
+    gel("login").style.display="none";
+    var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
+    gel("ubadge").textContent=CU.n+" / "+CU.rol+(CU.ap?" (AP)":"");
+    buildNav();initPOS();chkLow();chkVenc();
+    loadInact();secAttach();secReset();initPosSearch();
+    if(window.fbDB){
+      if(!localStorage.getItem("telp_pushed_v8"))pushToFirebase();
+      syncFromFirebase(function(){refreshCurrentPage();startPollingSync();});
+    }
+    return true;
+  }catch(e){gel("login").style.display="flex";return false;}
+}
+function gel(id){return document.getElementById(id);}
+function fmt(n){return "$"+Number(Math.round(n)).toLocaleString("es-CO");}
+function openOv(id){gel(id).classList.add("on");}
+function closeOv(id){gel(id).classList.remove("on");}
+function toast(msg,t){
+  var c=gel("tc"),el=document.createElement("div");
+  el.className="toast badge "+(t==="e"?"blow":t==="w"?"bwarn":"bok");
+  el.style.cssText="padding:11px 18px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.4)";
+  el.textContent=msg;c.appendChild(el);
+  setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},3800);
+}
+function addLog(tp,msg,lv){
+  var logs=ld(K.log,[]);
+  logs.unshift({t:new Date().toISOString(),tp:tp,msg:msg,lv:lv||"i",u:CU?CU.n:"?"});
+  if(logs.length>600)logs.length=600;
+  sv(K.log,logs);
+}
+function dlCSV(rows,fn){
+  var b=new Blob([rows.join("\n")],{type:"text/csv;charset=utf-8;"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=fn;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+function dStr(d){
+  var p=d?d.split("/"):[];
+  return p.length===3?(p[2].length<4?"20"+p[2]:p[2])+"-"+(p[1].length<2?"0":"")+p[1]+"-"+(p[0].length<2?"0":"")+p[0]:d;
+}
 
+// STATE
+var CU=null,order=[],acat="TODOS",motCb=null,lastMot="",lf="all";
+var pendingFac=false,lastPed=null;
+var calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+var confirmCb=null,currentTurnoDate=null,currentPagoCol=null;
+
+// INIT
 function initData(){
   if(!localStorage.getItem(VER)){
     var ks=Object.values(K);
@@ -690,11 +835,6 @@ function canSee(m){
 // LOGIN
 function doLogin(){
   if(!checkLoginLockout())return;
-  if(window.fbDB){var le=gel("lerr");if(le){le.style.display="block";le.style.color="var(--acc2)";le.textContent="Sincronizando...";}syncFromFirebase(function(){if(le)le.style.display="none";doLogin2();});return;}
-  doLogin2();
-}
-function doLogin2(){
-  if(!checkLoginLockout())return;
   var u=gel("lu").value.trim();
   var pw=gel("lp").value.trim();
   gel("lerr").style.display="none";
@@ -718,13 +858,7 @@ function doLogin2(){
   gel("login").style.display="none";
   var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
   gel("ubadge").textContent=CU.n+" / "+CU.rol+(CU.ap?" (AP)":"");
-  try{
-  var sd=JSON.stringify({id:CU.id,user:CU,ts:Date.now()});
-  localStorage.setItem("telp_sess",sd);
-  sessionStorage.setItem("telp_sess",sd);
-  // Also save a copy of users list for offline restore
-  localStorage.setItem("telp_sess_users",localStorage.getItem(K.u)||"[]");
-}catch(e){}
+  try{var sd=JSON.stringify({id:CU.id,user:CU});localStorage.setItem("telp_sess",sd);sessionStorage.setItem("telp_sess",sd);}catch(e){}
   addLog("ACC","Ingreso al sistema","i");
   buildNav();initPOS();chkLow();chkVenc();
   loadInact();
@@ -738,8 +872,8 @@ function doLogout(){
     for(var i=ss.length-1;i>=0;i--){if(ss[i].uid===CU.id&&!ss[i].ex){ss[i].ex=new Date().toISOString();break;}}
     sv(K.ss,ss);addLog("ACC","Salio del sistema","i");
   }
-  try{localStorage.removeItem("telp_sess");sessionStorage.removeItem("telp_sess");localStorage.removeItem("telp_sess_users");}catch(e){}
-  if(window._syncInterval){clearInterval(window._syncInterval);window._syncInterval=null;}
+  try{localStorage.removeItem("telp_sess");sessionStorage.removeItem("telp_sess");}catch(e){}
+  if(window._syncInt){clearInterval(window._syncInt);window._syncInt=null;}
   CU=null;order=[];pendingFac=false;lastPed=null;
   // Reset all pages to default state to prevent session bleed
   var pgs=document.querySelectorAll(".page");
@@ -2510,65 +2644,16 @@ function wireup(){
   
 }
 
-function syncFromFirebase(cb){
-  if(!window.fbDB){if(cb)cb();return;}
-  var keys=Object.values(K);var pending=keys.length;
-  keys.forEach(function(k){
-    var dk=k.replace(/[^a-zA-Z0-9]/g,"_");
-    window.fbDB.collection("telp_data").doc(dk).get()
-      .then(function(doc){
-        if(doc.exists&&doc.data()&&doc.data().val){
-          var nv=doc.data().val;
-          if(nv!==localStorage.getItem(k))localStorage.setItem(k,nv);
-        }
-        pending--;if(pending<=0){if(cb)cb();}
-      }).catch(function(){pending--;if(pending<=0){if(cb)cb();}});
-  });
-}
-function startRealtimeSync(){
-  if(!window.fbDB||!CU)return;
-  if(window._syncInterval)clearInterval(window._syncInterval);
-  window._syncInterval=setInterval(function(){
-    if(!CU){clearInterval(window._syncInterval);return;}
-    Object.values(K).forEach(function(k){
-      var dk=k.replace(/[^a-zA-Z0-9]/g,"_");
-      window.fbDB.collection("telp_data").doc(dk).get()
-        .then(function(doc){
-          if(doc.exists&&doc.data()&&doc.data().val){
-            var nv=doc.data().val;
-            if(nv!==localStorage.getItem(k)){
-              localStorage.setItem(k,nv);
-              refreshCurrentPage();
-            }
-          }
-        }).catch(function(){});
-    });
-  },5000);
-  var st=gel("sync-st");if(st){st.textContent="[EN VIVO]";st.style.color="var(--acc3)";}
-}
-function restoreSession(){
-  try{
-    var sess=sessionStorage.getItem("telp_sess")||localStorage.getItem("telp_sess");
-    if(!sess){gel("login").style.display="flex";return false;}
-    var sd=JSON.parse(sess);
-    var found=sd.user||null;
-    if(!found){gel("login").style.display="flex";return false;}
-    CU=found;
-    gel("login").style.display="none";
-    var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
-    gel("ubadge").textContent=CU.n+" / "+CU.rol+(CU.ap?" (AP)":"");
-    buildNav();initPOS();chkLow();chkVenc();
-    loadInact();secAttach();secReset();initPosSearch();
-    if(window.fbDB){syncFromFirebase(function(){refreshCurrentPage();startRealtimeSync();});}
-    return true;
-  }catch(e){gel("login").style.display="flex";return false;}
-}
 initData();
 wireup();
-// Hide login initially
+// Restore session or show login
 gel("login").style.display="none";
-var restored=restoreSession();
-if(!restored){gel("login").style.display="flex";}
+if(!restoreSession()){
+  gel("login").style.display="flex";
+}
+
+
+
 </script>
 </body>
 </html>
