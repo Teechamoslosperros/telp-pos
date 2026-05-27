@@ -730,21 +730,9 @@ function restoreSession(){
     var sess=localStorage.getItem("telp_sess");
     if(!sess){gel("login").style.display="flex";return false;}
     var sd=JSON.parse(sess);
+    // Trust the saved user object directly - no re-validation needed
     var found=sd.user||null;
     if(!found){gel("login").style.display="flex";return false;}
-    // Try to get updated user data but keep saved user as fallback
-    try{
-      var cu=ld(K.u,null);
-      if(cu){
-        for(var i=0;i<cu.length;i++){
-          if(cu[i].id===sd.id){
-            // Only use if account is still active
-            if(cu[i].ok===false){gel("login").style.display="flex";return false;}
-            found=cu[i];break;
-          }
-        }
-      }
-    }catch(e){}
     CU=found;
     gel("login").style.display="none";
     var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
@@ -2650,19 +2638,18 @@ function wireup(){
 
 initData();
 wireup();
-// Restore session or show login
+// Restore session FIRST before any Firebase operations
 gel("login").style.display="none";
-// Load Firebase first then restore session
+var sessionRestored=restoreSession();
+if(!sessionRestored){
+  gel("login").style.display="flex";
+}
+// Then load Firebase in background
 if(typeof loadFirebase === "function"){
   loadFirebase(function(){
-    if(!restoreSession()){
-      gel("login").style.display="flex";
-    }
+    // Firebase loaded - polling already started in restoreSession
+    console.log("Firebase ready");
   });
-} else {
-  if(!restoreSession()){
-    gel("login").style.display="flex";
-  }
 }
 
 
