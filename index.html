@@ -727,7 +727,7 @@ function refreshCurrentPage(){
 }
 function restoreSession(){
   try{
-    var sess=sessionStorage.getItem("telp_sess")||localStorage.getItem("telp_sess");
+    var sess=localStorage.getItem("telp_sess");
     if(!sess){gel("login").style.display="flex";return false;}
     var sd=JSON.parse(sess);
     var found=sd.user||null;
@@ -857,7 +857,7 @@ function doLogin(){
   gel("login").style.display="none";
   var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
   gel("ubadge").textContent=CU.n+" / "+CU.rol+(CU.ap?" (AP)":"");
-  try{var sd=JSON.stringify({id:CU.id,user:CU});localStorage.setItem("telp_sess",sd);sessionStorage.setItem("telp_sess",sd);}catch(e){}
+  try{localStorage.setItem("telp_sess",JSON.stringify({id:CU.id,user:CU}));}catch(e){}
   addLog("ACC","Ingreso al sistema","i");
   buildNav();initPOS();chkLow();chkVenc();
   loadInact();
@@ -872,7 +872,7 @@ function doLogout(){
     for(var i=ss.length-1;i>=0;i--){if(ss[i].uid===CU.id&&!ss[i].ex){ss[i].ex=new Date().toISOString();break;}}
     sv(K.ss,ss);addLog("ACC","Salio del sistema","i");
   }
-  try{localStorage.removeItem("telp_sess");sessionStorage.removeItem("telp_sess");}catch(e){}
+  try{localStorage.removeItem("telp_sess");}catch(e){}
   if(window._syncInt){clearInterval(window._syncInt);window._syncInt=null;}
   CU=null;order=[];pendingFac=false;lastPed=null;
   // Reset all pages to default state to prevent session bleed
