@@ -731,16 +731,20 @@ function restoreSession(){
     if(!sess){gel("login").style.display="flex";return false;}
     var sd=JSON.parse(sess);
     var found=sd.user||null;
-    // Also verify against current users list if available
+    if(!found){gel("login").style.display="flex";return false;}
+    // Try to get updated user data but keep saved user as fallback
     try{
       var cu=ld(K.u,null);
       if(cu){
         for(var i=0;i<cu.length;i++){
-          if(cu[i].id===sd.id&&cu[i].ok!==false){found=cu[i];break;}
+          if(cu[i].id===sd.id){
+            // Only use if account is still active
+            if(cu[i].ok===false){gel("login").style.display="flex";return false;}
+            found=cu[i];break;
+          }
         }
       }
     }catch(e){}
-    if(!found){gel("login").style.display="flex";return false;}
     CU=found;
     gel("login").style.display="none";
     var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
