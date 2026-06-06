@@ -727,16 +727,20 @@ function refreshCurrentPage(){
 }
 function restoreSession(){
   try{
+    console.log("[RS] Starting restoreSession...");
     var sess=localStorage.getItem("telp_sess");
+    console.log("[RS] telp_sess:", sess ? "EXISTS" : "NULL");
     if(!sess){gel("login").style.display="flex";return false;}
     var sd=JSON.parse(sess);
-    // Trust the saved user object directly - no re-validation needed
+    console.log("[RS] parsed sd:", sd);
     var found=sd.user||null;
+    console.log("[RS] found user:", found ? found.n : "NULL");
     if(!found){gel("login").style.display="flex";return false;}
     CU=found;
     gel("login").style.display="none";
     var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
     gel("ubadge").textContent=CU.n+" / "+CU.rol+(CU.ap?" (AP)":"");
+    console.log("[RS] SUCCESS - restoring session for:", CU.n);
     buildNav();initPOS();chkLow();chkVenc();
     loadInact();secAttach();secReset();initPosSearch();
     // Always start polling sync - works with or without Firebase
@@ -1985,7 +1989,7 @@ function genComprobante(colName,pagoIdx){
   docHTML+="<div style='text-align:center;margin-top:20px' class='no-print'>";
   docHTML+="<button onclick='window.print()' style='background:#ff6b1a;color:#fff;border:none;border-radius:6px;padding:10px 24px;font-size:14px;cursor:pointer;margin-right:8px'>Imprimir / Guardar PDF</button>";
   docHTML+="</div>";
-  docHTML+="<script>";
+  docHTML+="<scr"+"ipt>";
   docHTML+="var canvases={};var drawing={};var lastPos={};";
   docHTML+="function activarFirma(n){";
   docHTML+="  var c=document.getElementById('canvas'+n);";
@@ -1999,7 +2003,7 @@ function genComprobante(colName,pagoIdx){
   docHTML+="  c.ontouchend=function(){drawing[n]=false;};";
   docHTML+="}";
   docHTML+="function limpiarFirma(n){var c=document.getElementById('canvas'+n);c.getContext('2d').clearRect(0,0,c.width,c.height);}";
-  docHTML+="<\/script></body></html>";
+  docHTML+="<\/scr"+"ipt>\n<sc"+"ript>\n</body></html>";
   win.document.write(docHTML);win.document.close();
 }
 
@@ -2636,24 +2640,78 @@ function wireup(){
   
 }
 
-initData();
-wireup();
+try{initData();}catch(e){console.error("[ERR] initData failed:",e);}
+try{wireup();}catch(e){console.error("[ERR] wireup failed:",e);}
 // Restore session FIRST before any Firebase operations
-gel("login").style.display="none";
-var sessionRestored=restoreSession();
-if(!sessionRestored){
-  gel("login").style.display="flex";
-}
-// Then load Firebase in background
+// Use DOMContentLoaded to ensure everything is ready
+window.addEventListener("DOMContentLoaded", function(){
+  console.log("[INIT] DOM ready, checking session...");
+  console.log("[INIT] telp_sess exists:", !!localStorage.getItem("telp_sess"));
+  gel("login").style.display="none";
+  try{
+    var sessionRestored=restoreSession();
+    console.log("[INIT] sessionRestored:", sessionRestored);
+    if(!sessionRestored){
+      gel("login").style.display="flex";
+    }
+  }catch(e){
+    console.error("[INIT] ERROR in restoreSession:", e);
+    gel("login").style.display="flex";
+  }
+});
+// Also load Firebase
 if(typeof loadFirebase === "function"){
   loadFirebase(function(){
-    // Firebase loaded - polling already started in restoreSession
     console.log("Firebase ready");
   });
 }
 
 
 
+</script>
+
+<script>
+// Session restore - runs after everything else
+(function(){
+  try{
+    console.log("[SESS] Checking session...");
+    var sess=localStorage.getItem("telp_sess");
+    console.log("[SESS] telp_sess:", sess ? "EXISTS" : "NULL");
+    if(sess){
+      var result=restoreSession();
+      console.log("[SESS] restore result:", result);
+    } else {
+      document.getElementById("login").style.display="flex";
+    }
+  }catch(e){
+    console.error("[SESS] Error:", e);
+    document.getElementById("login").style.display="flex";
+  }
+  loadFirebase(function(){console.log("Firebase ready");});
+})();
+</script>
+
+<script>
+(function(){
+  try{
+    console.log("[SESS] Checking session...");
+    var sess=localStorage.getItem("telp_sess");
+    console.log("[SESS] telp_sess:", sess ? "EXISTS" : "NULL");
+    if(sess && typeof restoreSession === "function"){
+      var result=restoreSession();
+      console.log("[SESS] restore result:", result);
+      if(!result) document.getElementById("login").style.display="flex";
+    } else {
+      document.getElementById("login").style.display="flex";
+    }
+  }catch(e){
+    console.error("[SESS] Error:", e);
+    document.getElementById("login").style.display="flex";
+  }
+  if(typeof loadFirebase === "function"){
+    loadFirebase(function(){console.log("Firebase ready");});
+  }
+})();
 </script>
 </body>
 </html>
