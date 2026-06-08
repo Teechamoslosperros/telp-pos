@@ -330,13 +330,44 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div id="hlist"></div>
   </div>
   <div class="page" id="pg-dash">
-    <div class="kpis" id="dkpis"></div>
-    <div class="g2" style="margin-bottom:16px">
-      <div class="card"><div class="ctit">Top Productos</div><div id="dtop"></div></div>
-      <div class="card"><div class="ctit" id="dash-vc-title">Ventas por Colaborador</div><div id="dvc"></div></div>
+    <!-- Period Selector -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <select id="dash-period" style="background:var(--sf1);color:var(--tx);border:1px solid var(--sf2);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer">
+        <option value="hoy">Hoy</option>
+        <option value="semana">Esta Semana</option>
+        <option value="mes" selected>Este Mes</option>
+        <option value="trim">Este Trimestre</option>
+        <option value="sem6">Este Semestre</option>
+        <option value="anio">Este Año</option>
+        <option value="todo">Todo el Historial</option>
+      </select>
+      <button class="bacc" id="btn-dash-csv" style="padding:8px 16px">&#11015; CSV</button>
+      <button class="bsm" id="btn-dash-print" style="padding:8px 16px">&#128438; Imprimir</button>
     </div>
-    <button class="bacc" id="btn-dash-csv">Descargar Reporte</button>
-    <button class="bsm" id="btn-dash-print" style="margin-left:8px">Imprimir</button>
+    <!-- KPIs -->
+    <div class="kpis" id="dkpis" style="margin-bottom:16px"></div>
+    <!-- Chart + Top Products -->
+    <div class="g2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="ctit">&#128200; Tendencia Mensual (12 meses)</div>
+        <div id="dash-chart"></div>
+      </div>
+      <div class="card">
+        <div class="ctit">&#127942; Top Productos</div>
+        <div id="dtop"></div>
+      </div>
+    </div>
+    <!-- Collaborator performance -->
+    <div class="g2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="ctit" id="dash-vc-title">Ventas por Colaborador</div>
+        <div id="dvc"></div>
+      </div>
+      <div class="card">
+        <div class="ctit">&#128197; Comparativo Últimos 6 Meses</div>
+        <div id="dash-tbl" style="overflow-x:auto"></div>
+      </div>
+    </div>
   </div>
   <div class="page" id="pg-nom">
     <div class="stabs">
@@ -1346,36 +1377,191 @@ function histCSV(){
 // DASHBOARD (colaborador ve solo su turno actual)
 function rnDash(){
   var hist=ld(K.h,[]);
+  var ins=ld(K.ins,DI);
   var isColaborador=!isAdmin()&&!CU.ap;
-  var myHist=hist;
-  if(isColaborador&&CU){
-    var ss=ld(K.ss,[]);
-    var lastSess=null;
-    for(var i=ss.length-1;i>=0;i--){if(ss[i].uid===CU.id){lastSess=ss[i];break;}}
-    if(lastSess){
-      var sesStart=new Date(lastSess.en);
-      myHist=hist.filter(function(p){if(p.col!==CU.n)return false;var pt=p.ts?new Date(p.ts):new Date(dStr(p.f));return pt>=sesStart;});
-    } else {
-      myHist=hist.filter(function(p){return p.col===CU.n;});
-    }
+
+  // Period selector - default to this month
+  var period=gel("dash-period")?gel("dash-period").value:"mes";
+  var now=new Date();
+  var pStart,pEnd,prevStart,prevEnd,pLabel;
+
+  if(period==="hoy"){
+    pStart=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    pEnd=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59);
+    prevStart=new Date(pStart); prevStart.setDate(prevStart.getDate()-1);
+    prevEnd=new Date(pEnd); prevEnd.setDate(prevEnd.getDate()-1);
+    pLabel="Hoy";
+  } else if(period==="semana"){
+    var dow=now.getDay();
+    pStart=new Date(now); pStart.setDate(now.getDate()-dow); pStart.setHours(0,0,0,0);
+    pEnd=new Date(pStart); pEnd.setDate(pStart.getDate()+6); pEnd.setHours(23,59,59);
+    prevStart=new Date(pStart); prevStart.setDate(prevStart.getDate()-7);
+    prevEnd=new Date(pEnd); prevEnd.setDate(prevEnd.getDate()-7);
+    pLabel="Esta Semana";
+  } else if(period==="mes"){
+    pStart=new Date(now.getFullYear(),now.getMonth(),1);
+    pEnd=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59);
+    prevStart=new Date(now.getFullYear(),now.getMonth()-1,1);
+    prevEnd=new Date(now.getFullYear(),now.getMonth(),0,23,59,59);
+    pLabel="Este Mes";
+  } else if(period==="trim"){
+    var qm=Math.floor(now.getMonth()/3)*3;
+    pStart=new Date(now.getFullYear(),qm,1);
+    pEnd=new Date(now.getFullYear(),qm+3,0,23,59,59);
+    prevStart=new Date(now.getFullYear(),qm-3,1);
+    prevEnd=new Date(now.getFullYear(),qm,0,23,59,59);
+    pLabel="Este Trimestre";
+  } else if(period==="sem6"){
+    var hm=now.getMonth()<6?0:6;
+    pStart=new Date(now.getFullYear(),hm,1);
+    pEnd=new Date(now.getFullYear(),hm+6,0,23,59,59);
+    prevStart=new Date(now.getFullYear(),hm-6,1);
+    prevEnd=new Date(now.getFullYear(),hm,0,23,59,59);
+    pLabel="Este Semestre";
+  } else if(period==="anio"){
+    pStart=new Date(now.getFullYear(),0,1);
+    pEnd=new Date(now.getFullYear(),11,31,23,59,59);
+    prevStart=new Date(now.getFullYear()-1,0,1);
+    prevEnd=new Date(now.getFullYear()-1,11,31,23,59,59);
+    pLabel="Este Año";
+  } else {
+    pStart=new Date(0); pEnd=new Date(); prevStart=new Date(0); prevEnd=new Date(0);
+    pLabel="Todo el Historial";
   }
-  var tv=0;for(var i=0;i<myHist.length;i++)tv+=myHist[i].tot;
-  var tp=myHist.length,prom=tp>0?tv/tp:0;
-  var ins=ld(K.ins,DI),cr=0;for(var i=0;i<ins.length;i++){if(ins[i].s<=ins[i].m)cr++;}
-  gel("dkpis").innerHTML="<div class='kcard'><div class='klbl'>"+(isColaborador?"Mis Ventas (turno)":"Total Ventas")+"</div><div class='kval' style=\"font-size:18px;font-family:'JetBrains Mono',monospace\">"+fmt(tv)+"</div></div><div class='kcard'><div class='klbl'>"+(isColaborador?"Mis Pedidos":"Pedidos")+"</div><div class='kval'>"+tp+"</div></div><div class='kcard'><div class='klbl'>Promedio Pedido</div><div class='kval' style=\"font-size:18px;font-family:'JetBrains Mono',monospace\">"+fmt(Math.round(prom))+"</div></div><div class='kcard'><div class='klbl'>Insumos Criticos</div><div class='kval' style='color:"+(cr>0?"var(--err)":"var(--acc3)")+"'>"+cr+"</div></div>";
-  var pc={};for(var i=0;i<myHist.length;i++)for(var j=0;j<myHist[i].items.length;j++){var k=myHist[i].items[j].n;pc[k]=(pc[k]||0)+myHist[i].items[j].q;}
-  var ps=[];for(var k in pc)ps.push([k,pc[k]]);ps.sort(function(a,b){return b[1]-a[1];});if(ps.length>8)ps.length=8;
-  var mx=ps.length?ps[0][1]:1,h="";
-  for(var i=0;i<ps.length;i++)h+="<div style='margin-bottom:10px'><div style='display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px'><span>"+ps[i][0]+"</span><strong>"+ps[i][1]+"</strong></div><div style='height:5px;background:var(--sf2);border-radius:3px'><div style='height:5px;background:var(--acc);border-radius:3px;width:"+Math.round(ps[i][1]/mx*100)+"%'></div></div></div>";
-  gel("dtop").innerHTML=h||"<div style='color:var(--tx3);font-size:13px'>Sin datos</div>";
-  // Ventas por colaborador: admin ve todos, colaborador solo se ve a si mismo
-  var vcHist=isColaborador?myHist:hist;
-  gel("dash-vc-title").textContent=isColaborador?"Mis Ventas (turno actual)":"Ventas por Colaborador";
-  var ct={};for(var i=0;i<vcHist.length;i++){var c=vcHist[i].col;ct[c]=(ct[c]||0)+vcHist[i].tot;}
-  var cs=[];for(var k in ct)cs.push([k,ct[k]]);cs.sort(function(a,b){return b[1]-a[1];});var cm=cs.length?cs[0][1]:1;h="";
-  for(var i=0;i<cs.length;i++)h+="<div style='margin-bottom:10px'><div style='display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px'><span>"+cs[i][0]+"</span><strong style=\"font-family:'JetBrains Mono',monospace\">"+fmt(cs[i][1])+"</strong></div><div style='height:5px;background:var(--sf2);border-radius:3px'><div style='height:5px;background:var(--acc3);border-radius:3px;width:"+Math.round(cs[i][1]/cm*100)+"%'></div></div></div>";
-  gel("dvc").innerHTML=h||"<div style='color:var(--tx3);font-size:13px'>Sin datos</div>";
+
+  // Filter history for current and previous period
+  function inRange(p,s,e){var t=p.ts?new Date(p.ts):new Date(dStr(p.f));return t>=s&&t<=e;}
+  var curHist=hist.filter(function(p){return inRange(p,pStart,pEnd);});
+  var prevHist=hist.filter(function(p){return inRange(p,prevStart,prevEnd);});
+
+  if(isColaborador){
+    curHist=curHist.filter(function(p){return p.col===CU.n;});
+    prevHist=prevHist.filter(function(p){return p.col===CU.n;});
+  }
+
+  // KPIs current period
+  var tv=0; curHist.forEach(function(p){tv+=p.tot;});
+  var tp=curHist.length;
+  var prom=tp>0?Math.round(tv/tp):0;
+  var tdesc=0; curHist.forEach(function(p){tdesc+=(p.desc||0);});
+  var tbono=0; curHist.forEach(function(p){tbono+=(p.bono||0);});
+
+  // KPIs previous period
+  var ptv=0; prevHist.forEach(function(p){ptv+=p.tot;});
+  var ptp=prevHist.length;
+
+  // Trend calculation
+  function trend(cur,prev){
+    if(prev===0) return cur>0?100:0;
+    return Math.round(((cur-prev)/prev)*100);
+  }
+  function trendHtml(pct){
+    if(pct>0) return "<span style='color:var(--acc3);font-size:11px'>▲ "+pct+"%</span>";
+    if(pct<0) return "<span style='color:var(--err);font-size:11px'>▼ "+Math.abs(pct)+"%</span>";
+    return "<span style='color:var(--tx3);font-size:11px'>— 0%</span>";
+  }
+
+  var vTrend=trend(tv,ptv);
+  var pTrend=trend(tp,ptp);
+
+  // Critical inventory
+  var cr=0; ins.forEach(function(i){if(i.s<=i.m)cr++;});
+  var sinStock=0; ins.forEach(function(i){if(i.s<=0)sinStock++;});
+
+  // Render KPIs
+  var khtml="";
+  khtml+="<div class='kcard'><div class='klbl'>"+(isColaborador?"Mis Ventas":"Ventas Totales")+"</div><div class='kval' style='font-size:18px;font-family:monospace'>"+fmt(tv)+"</div><div style='margin-top:4px'>"+trendHtml(vTrend)+" vs período ant.</div></div>";
+  khtml+="<div class='kcard'><div class='klbl'>Pedidos</div><div class='kval'>"+tp+"</div><div style='margin-top:4px'>"+trendHtml(pTrend)+" vs período ant.</div></div>";
+  khtml+="<div class='kcard'><div class='klbl'>Ticket Promedio</div><div class='kval' style='font-size:18px;font-family:monospace'>"+fmt(prom)+"</div></div>";
+  khtml+="<div class='kcard'><div class='klbl'>Descuentos</div><div class='kval' style='color:var(--err);font-size:18px;font-family:monospace'>"+fmt(tdesc)+"</div></div>";
+  if(isAdmin()){
+    khtml+="<div class='kcard'><div class='klbl'>Bonos Aplicados</div><div class='kval' style='color:var(--acc2);font-size:18px;font-family:monospace'>"+fmt(tbono)+"</div></div>";
+    khtml+="<div class='kcard'><div class='klbl'>Insumos Críticos</div><div class='kval' style='color:"+(cr>0?"var(--err)":"var(--acc3))'")+">"+cr+"</div><div style='font-size:10px;color:var(--tx3)'>"+sinStock+" sin stock</div></div>";
+  }
+  gel("dkpis").innerHTML=khtml;
+
+  // Monthly trend chart (last 12 months)
+  var months=[];
+  for(var m=11;m>=0;m--){
+    var ms=new Date(now.getFullYear(),now.getMonth()-m,1);
+    var me=new Date(now.getFullYear(),now.getMonth()-m+1,0,23,59,59);
+    var mh=hist.filter(function(p){return inRange(p,ms,me);});
+    if(isColaborador) mh=mh.filter(function(p){return p.col===CU.n;});
+    var mt=0; mh.forEach(function(p){mt+=p.tot;});
+    var mn=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][ms.getMonth()];
+    months.push({label:mn+" "+(ms.getFullYear()%100),val:mt,count:mh.length});
+  }
+  var maxVal=Math.max.apply(null,months.map(function(m){return m.val;}))||1;
+  var chartHtml="<div style='display:flex;align-items:flex-end;gap:4px;height:120px;padding-bottom:20px;position:relative'>";
+  months.forEach(function(m,i){
+    var h=Math.max(4,Math.round((m.val/maxVal)*100));
+    var isCurrentMonth=(i===11);
+    chartHtml+="<div style='flex:1;display:flex;flex-direction:column;align-items:center;gap:2px'>";
+    chartHtml+="<div title='"+m.label+": "+fmt(m.val)+"' style='width:100%;height:"+h+"px;background:"+(isCurrentMonth?"var(--acc)":"var(--acc3)")+";opacity:"+(isCurrentMonth?"1":"0.6")+";border-radius:3px 3px 0 0;cursor:pointer'></div>";
+    chartHtml+="<div style='font-size:8px;color:var(--tx3);transform:rotate(-45deg);white-space:nowrap;margin-top:2px'>"+m.label+"</div>";
+    chartHtml+="</div>";
+  });
+  chartHtml+="</div>";
+
+  // Top products
+  var pc={};
+  curHist.forEach(function(p){
+    p.items.forEach(function(it){pc[it.n]=(pc[it.n]||0)+it.q;});
+  });
+  var ps=Object.keys(pc).map(function(k){return[k,pc[k]];});
+  ps.sort(function(a,b){return b[1]-a[1];}); if(ps.length>8)ps.length=8;
+  var mx=ps.length?ps[0][1]:1;
+  var topHtml="";
+  ps.forEach(function(p,i){
+    var pct=Math.round((p[1]/mx)*100);
+    topHtml+="<div style='margin-bottom:8px'><div style='display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px'><span>"+(i+1)+". "+p[0]+"</span><strong>"+p[1]+" uds</strong></div><div style='height:5px;background:var(--sf2);border-radius:3px'><div style='height:5px;background:var(--acc);border-radius:3px;width:"+pct+"%'></div></div></div>";
+  });
+  gel("dtop").innerHTML=topHtml||"<p style='color:var(--tx3);font-size:12px'>Sin datos</p>";
+
+  // Sales by collaborator (admin only)
+  var vcHtml="";
+  if(isAdmin()){
+    var byCol={};
+    curHist.forEach(function(p){byCol[p.col]=(byCol[p.col]||0)+p.tot;});
+    var cols=Object.keys(byCol).map(function(k){return[k,byCol[k]];});
+    cols.sort(function(a,b){return b[1]-a[1];});
+    var mxc=cols.length?cols[0][1]:1;
+    cols.forEach(function(c){
+      var pct=Math.round((c[1]/mxc)*100);
+      vcHtml+="<div style='margin-bottom:8px'><div style='display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px'><span>"+c[0]+"</span><strong>"+fmt(c[1])+"</strong></div><div style='height:5px;background:var(--sf2);border-radius:3px'><div style='height:5px;background:var(--acc3);border-radius:3px;width:"+pct+"%'></div></div></div>";
+    });
+  }
+  gel("dvc").innerHTML=vcHtml||"<p style='color:var(--tx3);font-size:12px'>Sin datos</p>";
+  gel("dash-vc-title").textContent=isAdmin()?"Ventas por Colaborador":"Mi Desempeño";
+
+  // Monthly comparison table (admin only)
+  var tblEl=gel("dash-tbl");
+  if(tblEl&&isAdmin()){
+    var tblHtml="<table><thead><tr><th>Mes</th><th>Ventas</th><th>Pedidos</th><th>Promedio</th><th>vs Anterior</th></tr></thead><tbody>";
+    for(var m=5;m>=0;m--){
+      var ms2=new Date(now.getFullYear(),now.getMonth()-m,1);
+      var me2=new Date(now.getFullYear(),now.getMonth()-m+1,0,23,59,59);
+      var mh2=hist.filter(function(p){return inRange(p,ms2,me2);});
+      var mt2=0; mh2.forEach(function(p){mt2+=p.tot;});
+      var mc2=mh2.length;
+      var prev2=new Date(now.getFullYear(),now.getMonth()-m-1,1);
+      var prev2e=new Date(now.getFullYear(),now.getMonth()-m,0,23,59,59);
+      var ph2=hist.filter(function(p){return inRange(p,prev2,prev2e);});
+      var pt2=0; ph2.forEach(function(p){pt2+=p.tot;});
+      var tr2=trend(mt2,pt2);
+      var mn2=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][ms2.getMonth()]+" "+ms2.getFullYear();
+      var trendCl=tr2>0?"color:var(--acc3)":tr2<0?"color:var(--err)":"color:var(--tx3)";
+      tblHtml+="<tr><td>"+mn2+"</td><td>"+fmt(mt2)+"</td><td>"+mc2+"</td><td>"+fmt(mc2>0?Math.round(mt2/mc2):0)+"</td><td style='"+trendCl+"'>"+(tr2>0?"▲ ":"▼ ")+Math.abs(tr2)+"%</td></tr>";
+    }
+    tblHtml+="</tbody></table>";
+    tblEl.innerHTML=tblHtml;
+  }
+
+  // Update chart
+  var chartEl=gel("dash-chart");
+  if(chartEl) chartEl.innerHTML=chartHtml;
 }
+
 function dashCSV(){
   var hist=ld(K.h,[]);
   var isColaborador=!isAdmin()&&CU&&!CU.ap;
@@ -2534,6 +2720,7 @@ function wireup(){
   gel("btn-hist-del").addEventListener("click",delHistRango);
   // Dashboard
   gel("btn-dash-csv").addEventListener("click",function(){dlCSV(dashCSV(),"dashboard.csv");});
+  gel("dash-period").addEventListener("change",function(){rnDash();});
   gel("btn-dash-print").addEventListener("click",function(){window.print();});
   // Nomina tabs
   gel("stab-nr").addEventListener("click",function(){shNT("reg");});
