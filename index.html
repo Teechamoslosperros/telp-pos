@@ -239,6 +239,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <button class="nb" id="n-inv" style="display:none">Inventario</button>
       <button class="nb" id="n-hist" style="display:none">Historial</button>
       <button class="nb" id="n-dash" style="display:none">Dashboard</button>
+      <button class="nb" id="n-fin" style="display:none">Financiero</button>
       <button class="nb" id="n-nom" style="display:none">Nomina</button>
       <button class="nb" id="n-admin" style="display:none">Admin</button>
       <button class="nb" id="n-prods" style="display:none">Productos</button>
@@ -330,45 +331,107 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div id="hlist"></div>
   </div>
   <div class="page" id="pg-dash">
-    <!-- Period Selector -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-      <select id="dash-period" style="background:var(--sf1);color:var(--tx);border:1px solid var(--sf2);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer">
-        <option value="hoy">Hoy</option>
-        <option value="semana">Esta Semana</option>
-        <option value="mes" selected>Este Mes</option>
-        <option value="trim">Este Trimestre</option>
-        <option value="sem6">Este Semestre</option>
-        <option value="anio">Este Año</option>
-        <option value="todo">Todo el Historial</option>
-      </select>
-      <button class="bacc" id="btn-dash-csv" style="padding:8px 16px">&#11015; CSV</button>
-      <button class="bsm" id="btn-dash-print" style="padding:8px 16px">&#128438; Imprimir</button>
+    <div class="kpis" id="dkpis"></div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="card"><div class="ctit">Top Productos</div><div id="dtop"></div></div>
+      <div class="card"><div class="ctit" id="dash-vc-title">Ventas por Colaborador</div><div id="dvc"></div></div>
     </div>
-    <!-- KPIs -->
-    <div class="kpis" id="dkpis" style="margin-bottom:16px"></div>
-    <!-- Chart + Top Products -->
+    <button class="bacc" id="btn-dash-csv">Descargar Reporte</button>
+    <button class="bsm" id="btn-dash-print" style="margin-left:8px">Imprimir</button>
+  </div>
+
+  <div class="page" id="pg-fin" style="display:none">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <div>
+        <h2 style="margin:0;font-size:18px">💼 Control Financiero</h2>
+        <p style="margin:4px 0 0;font-size:12px;color:var(--tx3)">Inversión · Gastos · Rentabilidad</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="gas-period" style="background:var(--sf1);color:var(--tx);border:1px solid var(--sf2);border-radius:8px;padding:7px 12px;font-size:13px">
+          <option value="hoy">Hoy</option>
+          <option value="semana">Esta Semana</option>
+          <option value="mes" selected>Este Mes</option>
+          <option value="trim">Este Trimestre</option>
+          <option value="sem6">Este Semestre</option>
+          <option value="anio">Este Año</option>
+          <option value="todo">Todo</option>
+        </select>
+        <button class="bacc" id="btn-add-gasto" style="padding:8px 16px">+ Agregar Gasto</button>
+      </div>
+    </div>
+    <!-- KPIs Financieros -->
+    <div class="kpis" id="gas-kpis" style="margin-bottom:16px"></div>
+    <!-- Charts row -->
     <div class="g2" style="margin-bottom:16px">
       <div class="card">
-        <div class="ctit">&#128200; Tendencia Mensual (12 meses)</div>
-        <div id="dash-chart"></div>
+        <div class="ctit">📊 Ventas vs Gastos vs Ganancia</div>
+        <div id="gas-waterfall"></div>
       </div>
       <div class="card">
-        <div class="ctit">&#127942; Top Productos</div>
-        <div id="dtop"></div>
+        <div class="ctit">📂 Gastos por Categoría</div>
+        <div id="gas-chart"></div>
       </div>
     </div>
-    <!-- Collaborator performance -->
-    <div class="g2" style="margin-bottom:16px">
-      <div class="card">
-        <div class="ctit" id="dash-vc-title">Ventas por Colaborador</div>
-        <div id="dvc"></div>
+    <!-- Gastos list -->
+    <div class="card">
+      <div class="ctit">📋 Registro de Gastos</div>
+      <div id="gas-list" style="overflow-x:auto"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Agregar/Editar Gasto -->
+  <div class="overlay" id="ov-gasto">
+    <div class="modal sm">
+      <div class="mhdr"><span id="gasto-form-title">Nuevo Gasto</span><button class="mclose" onclick="closeOv('ov-gasto')">✕</button></div>
+      <div class="mbody">
+        <input type="hidden" id="gasto-id">
+        <div class="frow" style="flex-direction:column;gap:12px">
+          <div>
+            <label style="font-size:11px;color:var(--tx3);display:block;margin-bottom:4px">DESCRIPCIÓN</label>
+            <input class="inp" id="gasto-desc" placeholder="Ej: Pago arriendo, Compra insumos..." style="width:100%">
+          </div>
+          <div class="g2" style="gap:10px">
+            <div>
+              <label style="font-size:11px;color:var(--tx3);display:block;margin-bottom:4px">CATEGORÍA</label>
+              <select class="inp" id="gasto-cat" style="width:100%">
+                <option value="Operativo">Operativo</option>
+                <option value="Insumos">Insumos</option>
+                <option value="Arriendo">Arriendo</option>
+                <option value="Servicios">Servicios públicos</option>
+                <option value="Nomina">Nómina</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Mantenimiento">Mantenimiento</option>
+                <option value="Impuestos">Impuestos</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--tx3);display:block;margin-bottom:4px">TIPO</label>
+              <select class="inp" id="gasto-tipo" style="width:100%">
+                <option value="unico">📌 Único (fecha específica)</option>
+                <option value="recurrente">🔄 Recurrente (siempre aplica)</option>
+              </select>
+            </div>
+          </div>
+          <div id="gasto-fecha-row">
+            <label style="font-size:11px;color:var(--tx3);display:block;margin-bottom:4px">FECHA</label>
+            <input class="inp" type="date" id="gasto-fecha" style="width:100%">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--tx3);display:block;margin-bottom:4px">VALOR ($)</label>
+            <input class="inp" type="number" id="gasto-valor" placeholder="0" style="width:100%">
+          </div>
+        </div>
       </div>
-      <div class="card">
-        <div class="ctit">&#128197; Comparativo Últimos 6 Meses</div>
-        <div id="dash-tbl" style="overflow-x:auto"></div>
+      <div class="mftr">
+        <button class="bacc" id="btn-save-gasto">Guardar Gasto</button>
+        <button class="bsm" onclick="closeOv('ov-gasto')">Cancelar</button>
       </div>
     </div>
   </div>
+
   <div class="page" id="pg-nom">
     <div class="stabs">
       <button class="stab on" id="stab-nr">Registro</button>
@@ -638,7 +701,7 @@ var DP=[
   {id:"P021",n:"Jugo en Leche",p:6000,c:"BEBIDAS",e:"\uD83C\uDF79",fv:"",ad:"5,1,0"}
 ];
 var VER="telp_v8";
-var K={u:"v8u",p:"v8p",ins:"v8i",rec:"v8r",h:"v8h",pn:"v8pn",nom:"v8nom",ss:"v8ss",cfg:"v8cfg",log:"v8log",pl:"v8pl",pm:"v8pm",turnos:"v8cal",pagos:"v8pag",incap:"v8inc"};
+var K={u:"v8u",p:"v8p",ins:"v8i",rec:"v8r",h:"v8h",pn:"v8pn",nom:"v8nom",ss:"v8ss",cfg:"v8cfg",log:"v8log",pl:"v8pl",pm:"v8pm",turnos:"v8cal",pagos:"v8pag",incap:"v8inc",gas:"v8gas"};
 var DU=[
   {id:"u1",n:"Beatriz",pw:"123",rol:"Administradora",ap:false,ok:true},
   {id:"u2",n:"Esteban",pw:"1",rol:"Creador",ap:false,ok:true},
@@ -794,6 +857,209 @@ var calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 var confirmCb=null,currentTurnoDate=null,currentPagoCol=null;
 
 // INIT
+
+// ============================================================
+// MÓDULO FINANCIERO - GASTOS Y RENTABILIDAD
+// ============================================================
+var DG=[]; // default gastos
+
+function rnGastos(){
+  var gas=ld(K.gas,DG);
+  var hist=ld(K.h,[]);
+  var period=gel("gas-period")?gel("gas-period").value:"mes";
+  var now=new Date();
+  var pStart,pEnd;
+  if(period==="hoy"){
+    pStart=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    pEnd=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59);
+  } else if(period==="semana"){
+    var dow=now.getDay();
+    pStart=new Date(now); pStart.setDate(now.getDate()-dow); pStart.setHours(0,0,0,0);
+    pEnd=new Date(pStart); pEnd.setDate(pStart.getDate()+6); pEnd.setHours(23,59,59);
+  } else if(period==="mes"){
+    pStart=new Date(now.getFullYear(),now.getMonth(),1);
+    pEnd=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59);
+  } else if(period==="trim"){
+    var qm=Math.floor(now.getMonth()/3)*3;
+    pStart=new Date(now.getFullYear(),qm,1);
+    pEnd=new Date(now.getFullYear(),qm+3,0,23,59,59);
+  } else if(period==="sem6"){
+    var hm=now.getMonth()<6?0:6;
+    pStart=new Date(now.getFullYear(),hm,1);
+    pEnd=new Date(now.getFullYear(),hm+6,0,23,59,59);
+  } else if(period==="anio"){
+    pStart=new Date(now.getFullYear(),0,1);
+    pEnd=new Date(now.getFullYear(),11,31,23,59,59);
+  } else {
+    pStart=new Date(0); pEnd=new Date();
+  }
+
+  // Filter history for period
+  function inRange(p){var t=p.ts?new Date(p.ts):new Date(dStr(p.f));return t>=pStart&&t<=pEnd;}
+  var ph=hist.filter(inRange);
+  var totalVentas=0; ph.forEach(function(p){totalVentas+=p.tot;});
+  var totalDescuentos=0; ph.forEach(function(p){totalDescuentos+=(p.desc||0);});
+  var totalBonos=0; ph.forEach(function(p){totalBonos+=(p.bono||0);});
+  var ventasNetas=totalVentas-totalDescuentos-totalBonos;
+
+  // Filter gastos for period
+  var gasFilt=gas.filter(function(g){
+    if(!g.fecha) return true; // recurrent
+    var t=new Date(g.fecha); return t>=pStart&&t<=pEnd;
+  });
+  // Also include recurrent gastos
+  var gasRec=gas.filter(function(g){return g.tipo==="recurrente";});
+  var gasAll=gas.filter(function(g){
+    if(g.tipo==="recurrente") return true;
+    if(!g.fecha) return false;
+    var t=new Date(g.fecha); return t>=pStart&&t<=pEnd;
+  });
+
+  // Totals by category
+  var bycat={};
+  var totalGastos=0;
+  gasAll.forEach(function(g){
+    var val=Number(g.valor)||0;
+    totalGastos+=val;
+    bycat[g.cat]=(bycat[g.cat]||0)+val;
+  });
+
+  var ganancia=ventasNetas-totalGastos;
+  var margen=ventasNetas>0?Math.round((ganancia/ventasNetas)*100):0;
+
+  // ---- KPIs financieros ----
+  var kEl=gel("gas-kpis");
+  if(kEl){
+    var mk=margen>=0?"var(--acc3)":"var(--err)";
+    kEl.innerHTML=
+      "<div class='kcard'><div class='klbl'>💰 Ventas Netas</div><div class='kval' style='font-size:18px;font-family:monospace'>"+fmt(ventasNetas)+"</div><div style='font-size:10px;color:var(--tx3)'>Bruto: "+fmt(totalVentas)+" | Desc: "+fmt(totalDescuentos)+"</div></div>"+
+      "<div class='kcard'><div class='klbl'>📤 Total Gastos</div><div class='kval' style='color:var(--err);font-size:18px;font-family:monospace'>"+fmt(totalGastos)+"</div><div style='font-size:10px;color:var(--tx3)'>"+gasAll.length+" registros</div></div>"+
+      "<div class='kcard'><div class='klbl'>📊 Ganancia / Pérdida</div><div class='kval' style='color:"+mk+";font-size:18px;font-family:monospace'>"+fmt(ganancia)+"</div><div style='font-size:10px;color:var(--tx3)'>"+(ganancia>=0?"✅ Positivo":"⚠️ Negativo")+"</div></div>"+
+      "<div class='kcard'><div class='klbl'>📈 Margen de Utilidad</div><div class='kval' style='color:"+mk+"'>"+margen+"%</div><div style='font-size:10px;color:var(--tx3)'>"+(margen>=20?"Saludable":margen>=10?"Aceptable":"Bajo")+"</div></div>";
+  }
+
+  // ---- Gastos por categoría (visual) ----
+  var catEl=gel("gas-chart");
+  if(catEl){
+    var cats=Object.keys(bycat).sort(function(a,b){return bycat[b]-bycat[a];});
+    var maxC=cats.length?bycat[cats[0]]:1;
+    var ch="<div style='margin-bottom:8px;font-size:11px;color:var(--tx3)'>Distribución de gastos por categoría</div>";
+    cats.forEach(function(c){
+      var pct=Math.round((bycat[c]/totalGastos)*100)||0;
+      var bar=Math.round((bycat[c]/maxC)*100);
+      ch+="<div style='margin-bottom:10px'>";
+      ch+="<div style='display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px'><span>"+c+"</span><span><strong>"+fmt(bycat[c])+"</strong> <span style='color:var(--tx3)'>("+pct+"%)</span></span></div>";
+      ch+="<div style='height:6px;background:var(--sf2);border-radius:3px'><div style='height:6px;background:var(--acc);border-radius:3px;width:"+bar+"%'></div></div>";
+      ch+="</div>";
+    });
+    catEl.innerHTML=ch||"<p style='color:var(--tx3);font-size:12px'>Sin gastos registrados</p>";
+  }
+
+  // ---- Waterfall: Ventas → Gastos → Ganancia ----
+  var wfEl=gel("gas-waterfall");
+  if(wfEl){
+    var maxW=Math.max(totalVentas,totalGastos,Math.abs(ganancia),1);
+    var wf="<div style='display:flex;align-items:flex-end;gap:12px;height:140px;padding-bottom:24px'>";
+    function bar(lbl,val,color){
+      var h=Math.max(8,Math.round((Math.abs(val)/maxW)*120));
+      return "<div style='flex:1;display:flex;flex-direction:column;align-items:center;gap:4px'>"
+        +"<div style='font-size:10px;color:var(--tx3);font-family:monospace'>"+fmt(val)+"</div>"
+        +"<div style='width:100%;height:"+h+"px;background:"+color+";border-radius:4px 4px 0 0'></div>"
+        +"<div style='font-size:10px;color:var(--tx3);text-align:center'>"+lbl+"</div>"
+        +"</div>";
+    }
+    wf+=bar("Ventas\nNetas",ventasNetas,"var(--acc3)");
+    wf+=bar("Total\nGastos",totalGastos,"var(--err)");
+    wf+=bar("Ganancia\nNeta",ganancia,ganancia>=0?"var(--acc3)":"var(--err)");
+    wf+="</div>";
+    wfEl.innerHTML=wf;
+  }
+
+  // ---- List of gastos ----
+  var listEl=gel("gas-list");
+  if(listEl){
+    var listGas=gas.slice().sort(function(a,b){
+      var da=a.fecha?new Date(a.fecha):new Date(0);
+      var db=b.fecha?new Date(b.fecha):new Date(0);
+      return db-da;
+    });
+    if(listGas.length===0){
+      listEl.innerHTML="<p style='color:var(--tx3);font-size:13px;padding:16px'>No hay gastos registrados. Agrega tu primer gasto con el botón +</p>";
+      return;
+    }
+    var th="<table><thead><tr><th>Descripción</th><th>Categoría</th><th>Tipo</th><th>Fecha</th><th>Valor</th><th></th></tr></thead><tbody>";
+    listGas.forEach(function(g,i){
+      var fechaStr=g.fecha?new Date(g.fecha).toLocaleDateString("es-CO"):"Recurrente";
+      var tipoStr=g.tipo==="recurrente"?"🔄 Recurrente":"📌 Único";
+      th+="<tr>"
+        +"<td>"+g.desc+"</td>"
+        +"<td><span style='background:var(--sf2);padding:2px 8px;border-radius:12px;font-size:10px'>"+g.cat+"</span></td>"
+        +"<td style='font-size:11px'>"+tipoStr+"</td>"
+        +"<td style='font-size:11px;color:var(--tx3)'>"+fechaStr+"</td>"
+        +"<td style='color:var(--err);font-family:monospace'>"+fmt(Number(g.valor))+"</td>"
+        +"<td><button class='bsm' onclick='editGasto("+i+")' style='padding:2px 8px;font-size:11px'>✏️</button> <button class='bsm' onclick='delGasto("+i+")' style='padding:2px 8px;font-size:11px;background:var(--err)'>🗑️</button></td>"
+        +"</tr>";
+    });
+    th+="</tbody></table>";
+    listEl.innerHTML=th;
+  }
+}
+
+function openAddGasto(){
+  gel("gasto-form-title").textContent="Nuevo Gasto";
+  gel("gasto-id").value="";
+  gel("gasto-desc").value="";
+  gel("gasto-cat").value="Operativo";
+  gel("gasto-tipo").value="unico";
+  gel("gasto-fecha").value=new Date().toISOString().split("T")[0];
+  gel("gasto-valor").value="";
+  openOv("ov-gasto");
+}
+
+function editGasto(i){
+  var gas=ld(K.gas,DG);
+  var g=gas[i];
+  if(!g) return;
+  gel("gasto-form-title").textContent="Editar Gasto";
+  gel("gasto-id").value=i;
+  gel("gasto-desc").value=g.desc;
+  gel("gasto-cat").value=g.cat;
+  gel("gasto-tipo").value=g.tipo||"unico";
+  gel("gasto-fecha").value=g.fecha||"";
+  gel("gasto-valor").value=g.valor;
+  openOv("ov-gasto");
+}
+
+function saveGasto(){
+  var desc=gel("gasto-desc").value.trim();
+  var cat=gel("gasto-cat").value;
+  var tipo=gel("gasto-tipo").value;
+  var fecha=gel("gasto-fecha").value;
+  var valor=parseFloat(gel("gasto-valor").value)||0;
+  if(!desc){toast("Ingresa una descripción","w");return;}
+  if(!valor){toast("Ingresa un valor","w");return;}
+  var gas=ld(K.gas,DG);
+  var idx=gel("gasto-id").value;
+  var g={desc:desc,cat:cat,tipo:tipo,fecha:tipo==="unico"?fecha:"",valor:valor,ts:Date.now()};
+  if(idx!==""){gas[parseInt(idx)]=g;}
+  else{gas.push(g);}
+  sv(K.gas,gas);
+  closeOv("ov-gasto");
+  rnGastos();
+  toast("Gasto guardado","s");
+  addLog("GAS","Gasto: "+desc+" "+fmt(valor),"i");
+}
+
+function delGasto(i){
+  confirmDel("¿Eliminar este gasto?",function(){
+    var gas=ld(K.gas,DG);
+    gas.splice(i,1);
+    sv(K.gas,gas);
+    rnGastos();
+    toast("Gasto eliminado","s");
+  });
+}
+
 function initData(){
   if(!localStorage.getItem(VER)){
     var ks=Object.values(K);
@@ -950,10 +1216,11 @@ function sendRec(){
 // NAVEGACION
 function buildNav(){
   var isAP=CU&&CU.ap&&!isAdmin();
-  var mods=["inv","hist","dash","nom","admin"];
+  var mods=["inv","hist","dash","fin","nom","admin"];
   for(var i=0;i<mods.length;i++){
     var m=mods[i],el=gel("n-"+m);if(!el)continue;
     if(m==="nom"){el.style.display=isAdmin()?"":"none";}
+    else if(m==="fin"){el.style.display=isAdmin()?"":"none";}
     else if(m==="admin"){
       // AP gets limited admin (only Productos tab inside)
       el.style.display=(isAdmin()||isAP)?"":"none";
@@ -980,6 +1247,7 @@ function goPg(name){
   var nb=gel("n-"+name);if(nb)nb.classList.add("on");
   if(name==="inv"){rnInv();initInvSearch();}
   if(name==="hist")rnHist();
+  if(name==="fin")rnGastos();
   if(name==="dash")rnDash();
   if(name==="nom")rnNom();
   if(name==="admin"){rnAdmin();initAdminSearch();}
@@ -2682,6 +2950,7 @@ function wireup(){
   gel("n-inv").addEventListener("click",function(){goPg("inv");});
   gel("n-hist").addEventListener("click",function(){goPg("hist");});
   gel("n-dash").addEventListener("click",function(){goPg("dash");});
+  if(gel("n-fin")) gel("n-fin").addEventListener("click",function(){goPg("fin");});
   gel("n-nom").addEventListener("click",function(){goPg("nom");});
   gel("n-admin").addEventListener("click",function(){goPg("admin");});
   var nprods=gel("n-prods");if(nprods)nprods.addEventListener("click",function(){goPg("prods");});
@@ -2719,9 +2988,9 @@ function wireup(){
   gel("btn-hist-print").addEventListener("click",function(){window.print();});
   gel("btn-hist-del").addEventListener("click",delHistRango);
   // Dashboard
-  gel("btn-dash-csv").addEventListener("click",function(){dlCSV(dashCSV(),"dashboard.csv");});
-  gel("dash-period").addEventListener("change",function(){rnDash();});
-  gel("btn-dash-print").addEventListener("click",function(){window.print();});
+  if(gel("btn-dash-csv")) gel("btn-dash-csv").addEventListener("click",function(){dlCSV(dashCSV(),"dashboard.csv");});
+  if(gel("dash-period")) gel("dash-period").addEventListener("change",function(){rnDash();});
+  if(gel("btn-dash-print")) gel("btn-dash-print").addEventListener("click",function(){window.print();});
   // Nomina tabs
   gel("stab-nr").addEventListener("click",function(){shNT("reg");});
   gel("stab-nc").addEventListener("click",function(){shNT("cfg");});
@@ -2797,13 +3066,24 @@ function wireup(){
   gel("btn-confmot").addEventListener("click",confMot);
   gel("btn-cancelmot").addEventListener("click",function(){closeOv("ov-mot");});
   gel("mot-inp").addEventListener("keydown",function(e){if(e.key==="Enter")confMot();});
+  // Financiero
+  try{
+    if(gel("btn-add-gasto")) gel("btn-add-gasto").addEventListener("click",openAddGasto);
+    if(gel("btn-save-gasto")) gel("btn-save-gasto").addEventListener("click",saveGasto);
+    if(gel("gas-period")) gel("gas-period").addEventListener("change",rnGastos);
+    if(gel("gasto-tipo")) gel("gasto-tipo").addEventListener("change",function(){
+      if(gel("gasto-fecha-row")) gel("gasto-fecha-row").style.display=this.value==="unico"?"":"none";
+    });
+  }catch(ex){}
   // Recuperar
   
   
 }
 
 try{initData();}catch(e){console.error("initData error:",e);}
-try{wireup();}catch(e){console.error("wireup error:",e);}
+try{wireup();}catch(e){
+  console.warn("wireup partial error (non-critical):",e.message);
+}
 
 
 
