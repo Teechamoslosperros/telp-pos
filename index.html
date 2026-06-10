@@ -791,9 +791,36 @@ var DR={
 function ld(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
 function sv(k,v){
   try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}
-  if(window.fbDB){try{var dk=k.replace(/[^a-zA-Z0-9]/g,"_");var nowTs=Date.now();
+  if(window.fbDB){
+    try{
+      var dk=k.replace(/[^a-zA-Z0-9]/g,"_");
+      var nowTs=Date.now();
+      // For historial: merge with Firebase to prevent data loss across devices
+      if(k===K.h){
+        window.fbDB.collection("telp_data").doc(dk).get().then(function(doc){
+          var merged=v.slice();
+          if(doc.exists&&doc.data()&&doc.data().val){
+            try{
+              var fbArr=JSON.parse(doc.data().val);
+              var byNum={};
+              fbArr.forEach(function(p){byNum[p.num||p.ts||Math.random()]=p;});
+              merged.forEach(function(p){byNum[p.num||p.ts||Math.random()]=p;});
+              merged=Object.values(byNum).sort(function(a,b){return(a.num||0)-(b.num||0);});
+              localStorage.setItem(k,JSON.stringify(merged));
+            }catch(e){}
+          }
+          window.fbDB.collection("telp_data").doc(dk).set({val:JSON.stringify(merged),ts:nowTs},{merge:true}).catch(function(){});
+          localStorage.setItem("_ts_"+k,nowTs);
+        }).catch(function(){
+          window.fbDB.collection("telp_data").doc(dk).set({val:JSON.stringify(v),ts:nowTs},{merge:true}).catch(function(){});
+          localStorage.setItem("_ts_"+k,nowTs);
+        });
+        return;
+      }
       window.fbDB.collection("telp_data").doc(dk).set({val:JSON.stringify(v),ts:nowTs},{merge:true}).catch(function(){});
-      localStorage.setItem("_ts_"+k,nowTs);}catch(ex){}}
+      localStorage.setItem("_ts_"+k,nowTs);
+    }catch(ex){}
+  }
 }
 function pushToFirebase(){
   if(!window.fbDB)return;
@@ -884,22 +911,44 @@ function restoreSession(){
     var sd=JSON.parse(sess);
     var found=sd.user||null;
     if(!found){gel("login").style.display="flex";return false;}
-    CU=found;
-    gel("login").style.display="none";
-    var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
-    gel("ubadge").textContent=CU.n+" / "+CU.rol+(CU.ap?" (AP)":"");
-    buildNav();initPOS();chkLow();chkVenc();
-    loadInact();secAttachListeners();secReset();initPosSearch();
-    setTimeout(function(){
-      if(window.fbDB){
-        if(!localStorage.getItem("telp_pushed_v8"))pushToFirebase();
-        syncFromFirebase(function(){refreshCurrentPage();startPollingSync();});
-      } else {
-        startPollingSync();
-      }
-    },500);
+    // If Firebase available, verify session token first
+    if(window.fbDB&&sd.tok&&sd.id){
+      window.fbDB.collection("telp_sessions").doc(sd.id).get()
+        .then(function(doc){
+          if(doc.exists&&doc.data()&&doc.data().tok!==sd.tok){
+            // Token mismatch - another device has this session
+            localStorage.removeItem("telp_sess");
+            gel("login").style.display="flex";
+            toast("Ya hay una sesión activa en otro dispositivo","e");
+          } else {
+            // Token OK or no session in Firebase - proceed
+            doRestoreSession(sd,found);
+          }
+        }).catch(function(){
+          // Firebase error - restore anyway
+          doRestoreSession(sd,found);
+        });
+      return true;
+    }
+    doRestoreSession(sd,found);
     return true;
   }catch(e){console.error("restoreSession error:",e);gel("login").style.display="flex";return false;}
+}
+function doRestoreSession(sd,found){
+  CU=found;
+  gel("login").style.display="none";
+  var app=gel("app");app.style.display="flex";app.style.flexDirection="column";
+  gel("ubadge").textContent=CU.n+" / "+CU.rol+(CU.ap?" (AP)":"");
+  buildNav();initPOS();chkLow();chkVenc();
+  loadInact();secAttachListeners();secReset();initPosSearch();
+  setTimeout(function(){
+    if(window.fbDB){
+      if(!localStorage.getItem("telp_pushed_v8"))pushToFirebase();
+      syncFromFirebase(function(){refreshCurrentPage();startPollingSync();});
+    } else {
+      startPollingSync();
+    }
+  },500);
 }
 function gel(id){return document.getElementById(id);}
 function fmt(n){return "$"+Number(Math.round(n)).toLocaleString("es-CO");}
@@ -1215,10 +1264,12 @@ function doLogin(){
   var sessTok=Date.now().toString(36)+Math.random().toString(36).substr(2);
   var sessData={id:CU.id,user:CU,tok:sessTok,ts:Date.now()};
   localStorage.setItem("telp_sess",JSON.stringify(sessData));
-  // Register session token in Firebase so other devices can detect it
+  // Register session token in Firebase - this kicks out any existing session
   if(window.fbDB){
     window.fbDB.collection("telp_sessions").doc(CU.id).set({
       tok:sessTok,ts:Date.now(),device:navigator.userAgent.substr(0,50)
+    }).then(function(){
+      console.log("Sesión registrada en Firebase");
     }).catch(function(){});
   }
 }catch(e){}
